@@ -6,11 +6,10 @@ Uses Keras with Tensorflow backend
 
 Relies on code in https://github.com/markhannel/lorenzmie to generate data
 
-Place createdata.py in the folder lorenzmie/theory/
-
 Dependencies:
   json
   numpy
   base64
   matplotlib
   keras
+  h5py
