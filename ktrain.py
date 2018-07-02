@@ -4,13 +4,11 @@ import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
-from keras.wrappers.scikit_learn import KerasRegressor
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
+#from keras.wrappers.scikit_learn import KerasRegressor
+#from sklearn.model_selection import cross_val_score
+#from sklearn.model_selection import KFold
 from keras import backend as K
 
-batch_size = 32
-epochs = 12
 
 # input image dimensions
 img_rows, img_cols = 201,201
@@ -25,6 +23,7 @@ x_test = numpy.array(data["testing"][0]["test_x"])
 y_test = numpy.array(data["testing"][0]["test_y"])
 
 #format data
+
 print('Formatting...')
 if K.image_data_format() == 'channels_first':
     x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
@@ -44,7 +43,7 @@ x_test *= 100./255
 def noisy(img):
     row,col,ch=input_shape
     mean=0
-    var=10**(-5)
+    var=0.05
     sigma=var**0.5
     gauss=numpy.random.normal(mean,sigma,(row,col,ch))
     gauss = gauss.reshape(row,col,ch)
@@ -70,8 +69,15 @@ def baseline_model():
     model.add(Conv2D(32, kernel_size=(3, 3),
                  activation='relu',
                  input_shape=input_shape))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+    model.add(Conv2D(32, (3, 3), activation='relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(32, (3,3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+    model.add(Conv2D(32, (3,3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+   # model.add(Conv2D(32, (3,3), activation='relu'))
+   # model.add(MaxPooling2D(pool_size=(2,2)))
     model.add(Dropout(0.5))
     model.add(Flatten())
     model.add(Dense(12, input_dim=13, kernel_initializer='normal', activation='relu'))
@@ -80,7 +86,7 @@ def baseline_model():
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
 
-
+'''
 seed = 7
 numpy.random.seed(seed)
 estimator = KerasRegressor(build_fn=baseline_model, epochs=epochs, batch_size=batch_size, verbose=1)
@@ -88,6 +94,17 @@ estimator = KerasRegressor(build_fn=baseline_model, epochs=epochs, batch_size=ba
 kfold = KFold(n_splits=10, random_state=seed)
 results = cross_val_score(estimator, x_train, y_train, cv=kfold)
 print("Results: %.2f (%.2f) MSE" % (results.mean(), results.std()))
+'''
+
+batch_size = 32
+epochs = 70
+
+estimator = baseline_model()
+estimator.summary()
+tbCallBack = keras.callbacks.TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
+earlystopCB = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=5, verbose=0, mode='auto', baseline=None)
+estimator.fit(x_train, y_train, batch_size = batch_size, epochs=epochs, verbose=1, validation_data = (x_test, y_test), callbacks = [tbCallBack])
+estimator.save('predict_z.h5')
 
 #estimator.fit(x_train, y_train)
 #y_pred = estimator.predict(x_test)
@@ -95,8 +112,8 @@ print("Results: %.2f (%.2f) MSE" % (results.mean(), results.std()))
 #plt.plot(y_test, y_test)
 #plt.show()
 
-estimator.fit(x_train, y_train)
-estimator.model.save('predict_z.h5')
+#estimator.fit(x_train, y_train)
+#estimator.model.save('predict_z.h5')
 
 #estimator_json = estimator.model.to_json()
 #print(estimator_json)
