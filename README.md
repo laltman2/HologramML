@@ -13,3 +13,4 @@ Dependencies:
   matplotlib
   keras
   h5py
+  PIL
